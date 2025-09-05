@@ -12,7 +12,8 @@ import java.io.Writer;
 
 public class DynamicGenerator {
     public static void main(String[] args) throws IOException, TemplateException {
-        String projectPath = System.getProperty("user.dir") + File.separator + "code-generator-basic";
+        String projectPath = System.getProperty("user.dir");
+        System.out.println(projectPath);
         String inputPath = projectPath + File.separator + "src/main/resources/template/MainTemplate.java.ftl";
         String outputPath = projectPath + File.separator + "MainTemplate.java";
 
