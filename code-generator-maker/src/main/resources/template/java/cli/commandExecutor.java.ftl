@@ -1,12 +1,12 @@
-package com.gre.maker.cli;
+package ${basePackage}.maker.cli;
 
-import com.gre.maker.cli.command.ConfigCommand;
-import com.gre.maker.cli.command.GenerateCommand;
-import com.gre.maker.cli.command.ListCommand;
+import ${basePackage}.cli.command.ConfigCommand;
+import ${basePackage}.cli.command.GenerateCommand;
+import ${basePackage}.cli.command.ListCommand;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
 
-@Command(name = "cg", mixinStandardHelpOptions = true)
+@Command(name = "$${name}", mixinStandardHelpOptions = true)
 public class CommandExecutor implements Runnable {
 
     private final CommandLine commandLine;
