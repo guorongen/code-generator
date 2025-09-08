@@ -16,18 +16,24 @@ public class MainGenerator {
         doGenerate(mainTemplateConfig);
     }
 
-    public static void doGenerate(MainTemplateConfig mainTemplateConfig) throws TemplateException, IOException {
-        System.out.println(mainTemplateConfig);
-        String projectPath = System.getProperty("user.dir");
-        File parentFile = new File(projectPath).getParentFile();
-        String inputPath = parentFile.getAbsolutePath() + File.separator + "code-generator-demo-projects" + File.separator + "acm-template";
-        String outputPath = projectPath;
-        StaticGenerator.copyFilesByRecursive(inputPath, outputPath);
+    public static void doGenerate(Object model) throws TemplateException, IOException {
 
+        String inputRootPath = "E:\\project\\code-generator\\code-generator-demo-projects\\acm-template-pro";
+        String outputRootPath = "E:\\project\\code-generator";
 
-        String dynamicInputPath = projectPath + File.separator + "src/main/resources/template/MainTemplate.java.ftl";
-        String dynamicOutputPath = projectPath + File.separator + "acm-template/src/com/gre/acm/MainTemplate.java";
+        String inputPath;
+        String outputPath;
 
-        DynamicGenerator.doGenerate(dynamicInputPath, dynamicOutputPath, mainTemplateConfig);
+        inputPath = new File(inputRootPath, "src/com/gre/acm/MainTemplate.java.ftl").getAbsolutePath();
+        outputPath = new File(outputRootPath, "src/com/gre/acm/MainTemplate.java").getAbsolutePath();
+        DynamicGenerator.doGenerate(inputPath, outputPath, model);
+
+        inputPath = new File(inputRootPath, ".gitignore").getAbsolutePath();
+        outputPath = new File(outputRootPath, ".gitignore").getAbsolutePath();
+        StaticGenerator.copyFilesByHutool(inputPath, outputPath);
+
+        inputPath = new File(inputRootPath, "README.md").getAbsolutePath();
+        outputPath = new File(outputRootPath, "README.md").getAbsolutePath();
+        StaticGenerator.copyFilesByHutool(inputPath, outputPath);
     }
 }
