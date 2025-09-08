@@ -1,6 +1,5 @@
 package ${basePackage}.generator;
 
-import ${basePackage}.MainTemplateConfig;
 import freemarker.template.TemplateException;
 
 import java.io.File;

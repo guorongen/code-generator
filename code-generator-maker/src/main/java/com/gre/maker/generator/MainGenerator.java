@@ -12,7 +12,7 @@ import java.io.File;
 import java.io.IOException;
 
 public class MainGenerator {
-    public static void main(String[] args) throws TemplateException, IOException {
+    public static void main(String[] args) throws TemplateException, IOException, InterruptedException {
         Meta meta = MetaManager.getMetaObject();
         System.out.println(meta);
 
@@ -79,7 +79,15 @@ public class MainGenerator {
 
         // generator.StaticGenerator
         inputFilePath = inputResourcePath + File.separator + "template/java/generator/StaticGenerator.java.ftl";
-        outputPath = outputBaseJavaPackagePath + "/generator/StaticGenerator.java";
-        DynamicFileGenerator.doGenerate(inputFilePath, outputPath, meta);
+        outputFilePath = outputBaseJavaPackagePath + "/generator/StaticGenerator.java";
+        DynamicFileGenerator.doGenerate(inputFilePath, outputFilePath, meta);
+
+        // pom.xml
+        inputFilePath = inputResourcePath + File.separator + "template/pom.xml.ftl";
+        outputFilePath = outputBaseJavaPackagePath + File.separator + "pom.xml";
+        DynamicFileGenerator.doGenerate(inputFilePath, outputFilePath, meta);
+
+        // 构建jar包
+        JarGenerator.doGenerate(outputPath);
     }
 }
