@@ -39,7 +39,7 @@ public class MainGenerator {
 
         // model.DataModel
         inputFilePath = inputResourcePath + File.separator + "template/java/model/DataModel.java.ftl";
-        outputFilePath = outputBaseJavaPackagePath + "/model/DataMode.java";
+        outputFilePath = outputBaseJavaPackagePath + "/model/DataModel.java";
         DynamicFileGenerator.doGenerate(inputFilePath, outputFilePath, meta);
 
         // cli.command.generateCommand
@@ -84,10 +84,16 @@ public class MainGenerator {
 
         // pom.xml
         inputFilePath = inputResourcePath + File.separator + "template/pom.xml.ftl";
-        outputFilePath = outputBaseJavaPackagePath + File.separator + "pom.xml";
+        outputFilePath = outputPath + File.separator + "pom.xml";
         DynamicFileGenerator.doGenerate(inputFilePath, outputFilePath, meta);
 
         // 构建jar包
         JarGenerator.doGenerate(outputPath);
+
+        // 封装脚本
+        String shellOutputFilePath = outputPath + File.separator + "generator";
+        String jarName = String.format("%s-%s-jar-with-dependencies.jar", meta.getName(), meta.getVersion());
+        String jarPath = "target/" + jarName;
+        ScriptGenerator.doGenerate(shellOutputFilePath, jarPath);
     }
 }

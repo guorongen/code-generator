@@ -8,6 +8,10 @@
     <artifactId>${name}</artifactId>
     <version>${version}</version>
 
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>info.picocli</groupId>

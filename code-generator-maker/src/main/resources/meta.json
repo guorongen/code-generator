@@ -6,7 +6,7 @@
   "author": "gre",
   "createTime": "2025-09-07",
   "fileConfig": {
-    "inputRootPath": "/project/code-generator/code-generator-demo-projects/acm-template-pro",
+    "inputRootPath": "E:/project/code-generator/code-generator-demo-projects/acm-template-pro",
     "outputRootPath": "generated",
     "type": "dir",
     "files": [
