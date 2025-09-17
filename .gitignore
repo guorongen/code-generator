@@ -2,6 +2,7 @@
 .idea
 generated
 code-generator.iml
+.temp
 
 ### Maven template
 target/
