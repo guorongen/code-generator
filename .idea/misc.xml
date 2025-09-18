@@ -6,6 +6,7 @@
       <list>
         <option value="$PROJECT_DIR$/code-generator-basic/pom.xml" />
         <option value="$PROJECT_DIR$/code-generator-maker/pom.xml" />
+        <option value="$PROJECT_DIR$/code-generator-demo-projects/springboot-init-master/pom.xml" />
       </list>
     </option>
   </component>
