@@ -1,9 +1,12 @@
 package com.gre.maker.template;
 
+import cn.hutool.core.io.resource.ResourceUtil;
+import cn.hutool.json.JSONUtil;
 import com.gre.maker.meta.Meta;
 import com.gre.maker.template.enums.FileFilterRangeEnum;
 import com.gre.maker.template.enums.FileFilterRuleEnum;
 import com.gre.maker.template.model.FileFilterConfig;
+import com.gre.maker.template.model.TemplateMakerConfig;
 import com.gre.maker.template.model.TemplateMakerFileConfig;
 import com.gre.maker.template.model.TemplateMakerModelConfig;
 import org.junit.Test;
@@ -87,6 +90,14 @@ public class TemplateMakerTest {
         templateMakerModelConfig.setModels(modelInfoConfigList);
 
         long id = TemplateMaker.makeTemplate(meta, originProjectPath, templateMakerFileConfig, templateMakerModelConfig, 1L);
+        System.out.println(id);
+    }
+
+    @Test
+    public void testMakeTemplateWithJson() {
+        String configStr = ResourceUtil.readUtf8Str("templateMaker.json");
+        TemplateMakerConfig templateMakerConfig = JSONUtil.toBean(configStr, TemplateMakerConfig.class);
+        long id = TemplateMaker.makeTemplate(templateMakerConfig);
         System.out.println(id);
     }
 }
