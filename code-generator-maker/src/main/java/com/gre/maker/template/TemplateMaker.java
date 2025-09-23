@@ -11,13 +11,9 @@ import com.gre.maker.meta.enums.FileGenerateTypeEnum;
 import com.gre.maker.meta.enums.FileTypeEnum;
 import com.gre.maker.template.enums.FileFilterRangeEnum;
 import com.gre.maker.template.enums.FileFilterRuleEnum;
-import com.gre.maker.template.model.FileFilterConfig;
-import com.gre.maker.template.model.TemplateMakerConfig;
-import com.gre.maker.template.model.TemplateMakerFileConfig;
-import com.gre.maker.template.model.TemplateMakerModelConfig;
+import com.gre.maker.template.model.*;
 
 import java.io.File;
-import java.nio.file.Paths;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -28,6 +24,7 @@ public class TemplateMaker {
 
     /**
      * 制作模板
+     *
      * @param templateMakerConfig
      * @return
      */
@@ -37,20 +34,23 @@ public class TemplateMaker {
         String originProjectPath = templateMakerConfig.getOriginProjectPath();
         TemplateMakerFileConfig templateMakerFileConfig = templateMakerConfig.getFileConfig();
         TemplateMakerModelConfig templateMakerModelConfig = templateMakerConfig.getModelConfig();
+        TemplateMakerOutputConfig outputConfig = templateMakerConfig.getOutputConfig();
 
-        return makeTemplate(meta, originProjectPath, templateMakerFileConfig, templateMakerModelConfig, id);
+        return makeTemplate(meta, originProjectPath, templateMakerFileConfig, templateMakerModelConfig, outputConfig, id);
     }
 
     /**
      * 制作模板
+     *
      * @param newMeta
      * @param originProjectPath
      * @param templateMakerFileConfig
      * @param templateMakerModelConfig
+     * @param templateMakerOutputConfig
      * @param id
      * @return
      */
-    public static long makeTemplate(Meta newMeta, String originProjectPath, TemplateMakerFileConfig templateMakerFileConfig, TemplateMakerModelConfig templateMakerModelConfig, Long id) {
+    public static long makeTemplate(Meta newMeta, String originProjectPath, TemplateMakerFileConfig templateMakerFileConfig, TemplateMakerModelConfig templateMakerModelConfig, TemplateMakerOutputConfig templateMakerOutputConfig, Long id) {
         // 没有id 则生成
         if (id == null) {
             id = IdUtil.getSnowflakeNextId();
@@ -59,7 +59,7 @@ public class TemplateMaker {
         // 复制目录
         String projectPath = System.getProperty("user.dir");
         String tempDirPath = projectPath + File.separator + ".temp";
-        String templatePath = tempDirPath +  File.separator + id;
+        String templatePath = tempDirPath + File.separator + id;
         if (!FileUtil.exist(templatePath)) {
             FileUtil.mkdir(templatePath);
             FileUtil.copy(originProjectPath, templatePath, true);
@@ -67,86 +67,23 @@ public class TemplateMaker {
 
         // 一、输入信息
         // 处理模型信息
-        List<TemplateMakerModelConfig.ModelInfoConfig> models = templateMakerModelConfig.getModels();
-
-        // 转换为配置文件接受的modelInfo对象
-        List<Meta.ModelConfig.ModelInfo> inputModelInfoList = models.stream()
-                .map(modelInfoConfig -> {
-                    Meta.ModelConfig.ModelInfo modelInfo = new Meta.ModelConfig.ModelInfo();
-                    BeanUtil.copyProperties(modelInfoConfig, modelInfo);
-                    return modelInfo;
-                }).collect(Collectors.toList());
-
-        // 本次新增的模型列表
-        List<Meta.ModelConfig.ModelInfo> newModelInfoList = new ArrayList<>();
-        // 如果是模型组
-        TemplateMakerModelConfig.ModelGroupConfig modelGroupConfig = templateMakerModelConfig.getModelGroupConfig();
-        if (modelGroupConfig != null) {
-            String condition = modelGroupConfig.getCondition();
-            String groupKey = modelGroupConfig.getGroupKey();
-            String groupName = modelGroupConfig.getGroupName();
-
-            Meta.ModelConfig.ModelInfo groupModelInfo = new Meta.ModelConfig.ModelInfo();
-            groupModelInfo.setCondition(condition);
-            groupModelInfo.setGroupKey(groupKey);
-            groupModelInfo.setGroupName(groupName);
-            // 模型全部放到一个分组内
-            groupModelInfo.setModels(inputModelInfoList);
-
-            newModelInfoList = new ArrayList<>();
-            newModelInfoList.add(groupModelInfo);
-        } else {
-            // 不分组，添加所有的模型信息到列表
-            newModelInfoList.addAll(inputModelInfoList);
-        }
+        List<Meta.ModelConfig.ModelInfo> newModelInfoList = getModelInfoList(templateMakerModelConfig);
 
 
         // 2、输入文件信息
         // 要挖坑的项目根目录
         File tempFile = new File(templatePath);
         templatePath = tempFile.getAbsolutePath();
-        String sourceRootPath = templatePath + File.separator + FileUtil.getLastPathEle(Paths.get(originProjectPath)).toString();
+        String sourceRootPath = FileUtil.loopFiles(new File(templatePath), 1, null)
+                .stream()
+                .filter(File::isDirectory)
+                .findFirst()
+                .orElseThrow(RuntimeException::new)
+                .getAbsolutePath();
+
         sourceRootPath = sourceRootPath.replaceAll("\\\\", "/");
-
-        List<TemplateMakerFileConfig.FileInfoConfig> fileInfoConfigList = templateMakerFileConfig.getFiles();
-
-        // 遍历输入文件
-        List<Meta.FileConfig.FileInfo> newFileInfoList = new ArrayList<>();
-        for (TemplateMakerFileConfig.FileInfoConfig fileInfoConfig : fileInfoConfigList) {
-            String inputFilePath = fileInfoConfig.getPath();
-            String inputFileAbsolutePath = sourceRootPath + File.separator + inputFilePath;
-
-            // 传入绝对路径
-            // 得到过滤后的文件列表
-            List<File> fileList = FileFilter.doFilter(inputFileAbsolutePath, fileInfoConfig.getFilterConfigList());
-
-            // 不处理已经生成的 FTL 模板文件
-            fileList = fileList.stream()
-                    .filter(file -> !file.getAbsolutePath().endsWith(".ftl"))
-                    .collect(Collectors.toList());
-            for (File file : fileList) {
-                Meta.FileConfig.FileInfo fileInfo = makeFileTemplate(templateMakerModelConfig, sourceRootPath, file);
-                newFileInfoList.add(fileInfo);
-            }
-        }
-
-        // 如果是文件组
-        TemplateMakerFileConfig.FileGroupConfig fileGroupConfig = templateMakerFileConfig.getFileGroupConfig();
-        if (fileGroupConfig != null) {
-            String condition = fileGroupConfig.getCondition();
-            String groupKey = fileGroupConfig.getGroupKey();
-            String groupName = fileGroupConfig.getGroupName();
-
-            Meta.FileConfig.FileInfo groupFileInfo = new Meta.FileConfig.FileInfo();
-            groupFileInfo.setCondition(condition);
-            groupFileInfo.setGroupKey(groupKey);
-            groupFileInfo.setGroupName(groupName);
-            // 文件全部放到一个分组内
-            groupFileInfo.setFiles(newFileInfoList);
-
-            newFileInfoList = new ArrayList<>();
-            newFileInfoList.add(groupFileInfo);
-        }
+        // 制作文件模板
+        List<Meta.FileConfig.FileInfo> newFileInfoList = makeFileTemplate(templateMakerFileConfig, templateMakerModelConfig, sourceRootPath);
 
         // 三、生成配置文件
         String metaOutputPath = templatePath + File.separator + "meta.json";
@@ -180,19 +117,136 @@ public class TemplateMaker {
             modelConfig.setModels(modelInfoList);
             modelInfoList.addAll(newModelInfoList);
         }
+
+        // 额外的输出配置
+        if (templateMakerOutputConfig != null) {
+            // 文件外层和分组去重
+            if (templateMakerOutputConfig.isRemoveGroupFilesFromRoot()) {
+                List<Meta.FileConfig.FileInfo> fileInfoList = newMeta.getFileConfig().getFiles();
+                newMeta.getFileConfig().setFiles(TemplateMakerUtils.removeGroupFilesFromRoot(fileInfoList));
+            }
+        }
+
         // 2、输出元信息文件
         FileUtil.writeUtf8String(JSONUtil.toJsonPrettyStr(newMeta), metaOutputPath);
         return id;
     }
 
     /**
+     * 获取模型配置
+     *
+     * @param templateMakerModelConfig
+     * @return
+     */
+    private static List<Meta.ModelConfig.ModelInfo> getModelInfoList(TemplateMakerModelConfig templateMakerModelConfig) {
+        // 本次新增的模型列表
+        List<Meta.ModelConfig.ModelInfo> newModelInfoList = new ArrayList<>();
+        // 非空校验
+        if (templateMakerModelConfig == null) {
+            return newModelInfoList;
+        }
+
+        List<TemplateMakerModelConfig.ModelInfoConfig> models = templateMakerModelConfig.getModels();
+        if (CollUtil.isEmpty(models)) {
+            return newModelInfoList;
+        }
+
+        // 处理模型信息
+        // 转换为配置文件接受的modelInfo对象
+        List<Meta.ModelConfig.ModelInfo> inputModelInfoList = models.stream()
+                .map(modelInfoConfig -> {
+                    Meta.ModelConfig.ModelInfo modelInfo = new Meta.ModelConfig.ModelInfo();
+                    BeanUtil.copyProperties(modelInfoConfig, modelInfo);
+                    return modelInfo;
+                }).collect(Collectors.toList());
+
+        // 如果是模型组
+        TemplateMakerModelConfig.ModelGroupConfig modelGroupConfig = templateMakerModelConfig.getModelGroupConfig();
+        if (modelGroupConfig != null) {
+            Meta.ModelConfig.ModelInfo groupModelInfo = new Meta.ModelConfig.ModelInfo();
+            BeanUtil.copyProperties(modelGroupConfig, groupModelInfo);
+
+            // 模型全部放到一个分组内
+            groupModelInfo.setModels(inputModelInfoList);
+            newModelInfoList.add(groupModelInfo);
+        } else {
+            // 不分组，添加所有的模型信息到列表
+            newModelInfoList.addAll(inputModelInfoList);
+        }
+        return newModelInfoList;
+    }
+
+    /**
+     * 生成多个文件
+     *
+     * @param templateMakerFileConfig
+     * @param templateMakerModelConfig
+     * @param sourceRootPath
+     * @return
+     */
+    private static List<Meta.FileConfig.FileInfo> makeFileTemplate(TemplateMakerFileConfig templateMakerFileConfig, TemplateMakerModelConfig templateMakerModelConfig, String sourceRootPath) {
+        // 遍历输入文件
+        List<Meta.FileConfig.FileInfo> newFileInfoList = new ArrayList<>();
+
+        // 非空校验
+        if (templateMakerFileConfig == null) {
+            return newFileInfoList;
+        }
+        List<TemplateMakerFileConfig.FileInfoConfig> fileInfoConfigList = templateMakerFileConfig.getFiles();
+        if (CollUtil.isEmpty(fileInfoConfigList)) {
+            return newFileInfoList;
+        }
+
+        for (TemplateMakerFileConfig.FileInfoConfig fileInfoConfig : fileInfoConfigList) {
+            String inputFilePath = fileInfoConfig.getPath();
+            String inputFileAbsolutePath = sourceRootPath + "/" + inputFilePath;
+
+            // 传入绝对路径
+            // 得到过滤后的文件列表
+            List<File> fileList = FileFilter.doFilter(inputFileAbsolutePath, fileInfoConfig.getFilterConfigList());
+
+            // 不处理已经生成的 FTL 模板文件
+            fileList = fileList.stream()
+                    .filter(file -> !file.getAbsolutePath().endsWith(".ftl"))
+                    .collect(Collectors.toList());
+            for (File file : fileList) {
+                Meta.FileConfig.FileInfo fileInfo = makeFileTemplate(templateMakerModelConfig, sourceRootPath, file, fileInfoConfig);
+                newFileInfoList.add(fileInfo);
+            }
+        }
+
+        // 如果是文件组
+        TemplateMakerFileConfig.FileGroupConfig fileGroupConfig = templateMakerFileConfig.getFileGroupConfig();
+        if (fileGroupConfig != null) {
+            String condition = fileGroupConfig.getCondition();
+            String groupKey = fileGroupConfig.getGroupKey();
+            String groupName = fileGroupConfig.getGroupName();
+            String type = fileGroupConfig.getType();
+
+            Meta.FileConfig.FileInfo groupFileInfo = new Meta.FileConfig.FileInfo();
+            groupFileInfo.setCondition(condition);
+            groupFileInfo.setGroupKey(groupKey);
+            groupFileInfo.setGroupName(groupName);
+            groupFileInfo.setType(type);
+            // 文件全部放到一个分组内
+            groupFileInfo.setFiles(newFileInfoList);
+
+            newFileInfoList = new ArrayList<>();
+            newFileInfoList.add(groupFileInfo);
+        }
+        return newFileInfoList;
+    }
+
+    /**
      * 制作模板文件
+     *
      * @param templateMakerModelConfig
      * @param sourceRootPath
      * @param inputFile
+     * @param fileInfoConfig
      * @return
      */
-    private static Meta.FileConfig.FileInfo makeFileTemplate(TemplateMakerModelConfig templateMakerModelConfig, String sourceRootPath, File inputFile) {
+    private static Meta.FileConfig.FileInfo makeFileTemplate(TemplateMakerModelConfig templateMakerModelConfig, String sourceRootPath, File inputFile, TemplateMakerFileConfig.FileInfoConfig fileInfoConfig) {
         String fileInputAbsolutePath = inputFile.getAbsolutePath();
         fileInputAbsolutePath = fileInputAbsolutePath.replaceAll("\\\\", "/");
         // 要挖坑的文件（一定要是相对路径）
@@ -232,6 +286,7 @@ public class TemplateMaker {
         Meta.FileConfig.FileInfo fileInfo = new Meta.FileConfig.FileInfo();
         fileInfo.setInputPath(fileOutputPath);
         fileInfo.setOutputPath(fileInputPath);
+        fileInfo.setCondition(fileInfoConfig.getCondition());
         fileInfo.setType(FileTypeEnum.FILE.getValue());
         fileInfo.setGenerateType(FileGenerateTypeEnum.DYNAMIC.getValue());
 
@@ -255,88 +310,9 @@ public class TemplateMaker {
         return fileInfo;
     }
 
-    public static void main(String[] args) {
-        // 1、项目的基本信息
-        Meta meta = new Meta();
-        meta.setName("acm-template-generator");
-        meta.setDescription("ACM 示例模板生成器");
-
-        // 指定原始项目路径
-        String projectPath = System.getProperty("user.dir");
-        String originProjectPath = new File(projectPath).getAbsolutePath() + File.separator + "code-generator-demo-projects/springboot-init-master";
-        String fileInputPath1 = "src/main/java/com/yupi/springbootinit/common";
-        String fileInputPath2 = "src/main/resources/application.yml";
-        List<String> inputFilePathList = Arrays.asList(fileInputPath1, fileInputPath2);
-
-        // 3、输入模型参数信息
-//        Meta.ModelConfig.ModelInfo modelInfo = new Meta.ModelConfig.ModelInfo();
-//        modelInfo.setFieldName("outputText");
-//        modelInfo.setType("String");
-//        modelInfo.setDefaultValue("sum = ");
-
-        Meta.ModelConfig.ModelInfo modelInfo = new Meta.ModelConfig.ModelInfo();
-        modelInfo.setFieldName("className");
-        modelInfo.setType("String");
-
-//        String searchStr = "Sum: ";
-        String searchStr = "BaseResponse";
-
-        // 文件过滤配置
-        TemplateMakerFileConfig.FileInfoConfig fileInfoConfig1 = new TemplateMakerFileConfig.FileInfoConfig();
-        fileInfoConfig1.setPath(fileInputPath1);
-        List<FileFilterConfig> fileFilterConfigList = new ArrayList<>();
-        FileFilterConfig fileFilterConfig = FileFilterConfig.builder()
-                .range(FileFilterRangeEnum.FILE_NAME.getValue())
-                .rule(FileFilterRuleEnum.CONTAINS.getValue())
-                .value("Base")
-                .build();
-        fileFilterConfigList.add(fileFilterConfig);
-        fileInfoConfig1.setFilterConfigList(fileFilterConfigList);
-
-        TemplateMakerFileConfig.FileInfoConfig fileInfoConfig2 = new TemplateMakerFileConfig.FileInfoConfig();
-        fileInfoConfig2.setPath(fileInputPath2);
-
-        List<TemplateMakerFileConfig.FileInfoConfig> fileInfoConfigList = Arrays.asList(fileInfoConfig1, fileInfoConfig2);
-
-        TemplateMakerFileConfig templateMakerFileConfig = new TemplateMakerFileConfig();
-        templateMakerFileConfig.setFiles(fileInfoConfigList);
-
-        // 分组配置
-        TemplateMakerFileConfig.FileGroupConfig fileGroupConfig = new TemplateMakerFileConfig.FileGroupConfig();
-        fileGroupConfig.setCondition("outputText");
-        fileGroupConfig.setGroupKey("test");
-        fileGroupConfig.setGroupName("测试分组");
-        templateMakerFileConfig.setFileGroupConfig(fileGroupConfig);
-
-        // 模型参数配置
-        TemplateMakerModelConfig templateMakerModelConfig = new TemplateMakerModelConfig();
-        // 模型组配置
-        TemplateMakerModelConfig.ModelGroupConfig modelGroupConfig = new TemplateMakerModelConfig.ModelGroupConfig();
-        modelGroupConfig.setGroupKey("mysql");
-        modelGroupConfig.setGroupName("数据库配置");
-        templateMakerModelConfig.setModelGroupConfig(modelGroupConfig);
-        // 模型配置
-        TemplateMakerModelConfig.ModelInfoConfig modelInfoConfig1 = new TemplateMakerModelConfig.ModelInfoConfig();
-        modelInfoConfig1.setFieldName("url");
-        modelInfoConfig1.setType("String");
-        modelInfoConfig1.setDefaultValue("jdbc:mysql://localhost:3306/my_db");
-        modelInfoConfig1.setReplaceText("jdbc:mysql://localhost:3306/my_db");
-
-        TemplateMakerModelConfig.ModelInfoConfig modelInfoConfig2 = new TemplateMakerModelConfig.ModelInfoConfig();
-        modelInfoConfig2.setFieldName("userName");
-        modelInfoConfig2.setType("String");
-        modelInfoConfig2.setDefaultValue("root");
-        modelInfoConfig2.setReplaceText("root");
-
-        List<TemplateMakerModelConfig.ModelInfoConfig> modelInfoConfigList = Arrays.asList(modelInfoConfig1, modelInfoConfig2);
-        templateMakerModelConfig.setModels(modelInfoConfigList);
-
-        long id = TemplateMaker.makeTemplate(meta, originProjectPath, templateMakerFileConfig, templateMakerModelConfig, 1968325813241622528L);
-        System.out.println(id);
-    }
-
     /**
      * 文件去重
+     *
      * @param fileInfoList
      * @return
      */
@@ -388,6 +364,7 @@ public class TemplateMaker {
 
     /**
      * 模型去重
+     *
      * @param modelInfoList
      * @return
      */

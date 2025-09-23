@@ -9,7 +9,7 @@ import java.util.List;
 public class TemplateMakerModelConfig {
     private List<ModelInfoConfig> models;
 
-    private ModelGroupConfig ModelGroupConfig;
+    private ModelGroupConfig modelGroupConfig;
 
     @Data
     @NoArgsConstructor
@@ -36,5 +36,9 @@ public class TemplateMakerModelConfig {
         private String groupKey;
 
         private String groupName;
+
+        private String type;
+
+        private String description;
     }
 }
