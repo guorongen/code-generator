@@ -3,6 +3,7 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/code-generator.iml" filepath="$PROJECT_DIR$/code-generator.iml" />
+      <module fileurl="file://$PROJECT_DIR$/code-generator-demo-projects/springboot-init-master/springboot-init.iml" filepath="$PROJECT_DIR$/code-generator-demo-projects/springboot-init-master/springboot-init.iml" />
     </modules>
   </component>
 </project>
