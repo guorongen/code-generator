@@ -3,6 +3,7 @@
 generated
 code-generator.iml
 .temp
+application-local.yml
 
 ### Maven template
 target/
