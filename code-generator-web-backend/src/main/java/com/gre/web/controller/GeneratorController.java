@@ -289,7 +289,7 @@ public class GeneratorController {
             cosObjectInputStream = cosObject.getObjectContent();
             byte[] bytes = IOUtils.toByteArray(cosObjectInputStream);
 
-            response.setContentType("application/octet-stream");
+            response.setContentType("application/octet-stream;charset=UTF-8");
             response.setHeader("Content-Disposition", "attachment; filename=" + filepath);
             response.getOutputStream().write(bytes);
             response.getOutputStream().flush();

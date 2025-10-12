@@ -22,6 +22,13 @@ export default [
     hideInMenu: true,
   },
   {
+    path: '/generator/detail/:id',
+    icon: 'home',
+    component: './Generator/Detail',
+    name: '生成器详情',
+    hideInMenu: true,
+  },
+  {
     path: '/test/file',
     icon: 'home',
     component: './Test/File',

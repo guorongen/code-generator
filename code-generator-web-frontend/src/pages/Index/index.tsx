@@ -6,6 +6,7 @@ import { Avatar, Card, Flex, Image, List, message, Tabs, Tag, Typography } from 
 import Input from 'antd/lib/input';
 import moment from 'moment';
 import React, { useEffect, useState } from 'react';
+import {Link} from "umi";
 
 /**
  * 默认分页参数
@@ -148,25 +149,27 @@ const IndexPage: React.FC = () => {
         }}
         renderItem={(data) => (
           <List.Item>
-            <Card hoverable cover={<Image alt={data.name} src={data.picture} />}>
-              <Card.Meta
-                title={<a>{data.name}</a>}
-                description={
-                  <Typography.Paragraph ellipsis={{ rows: 2 }} style={{ height: 44 }}>
-                    {data.description}
+            <Link to={`/generator/detail/${data.id}`}>
+              <Card hoverable cover={<Image alt={data.name} src={data.picture} />}>
+                <Card.Meta
+                  title={<a>{data.name}</a>}
+                  description={
+                    <Typography.Paragraph ellipsis={{ rows: 2 }} style={{ height: 44 }}>
+                      {data.description}
+                    </Typography.Paragraph>
+                  }
+                />
+                {tagListView(data.tags)}
+                <Flex justify="space-between" align="center">
+                  <Typography.Paragraph type="secondary" style={{ fontSize: 12 }}>
+                    {moment(data.createTime).fromNow()}
                   </Typography.Paragraph>
-                }
-              />
-              {tagListView(data.tags)}
-              <Flex justify="space-between" align="center">
-                <Typography.Paragraph type="secondary" style={{ fontSize: 12 }}>
-                  {moment(data.createTime).fromNow()}
-                </Typography.Paragraph>
-                <div>
-                  <Avatar src={data.user?.userAvatar ?? <UserOutlined />} />
-                </div>
-              </Flex>
-            </Card>
+                  <div>
+                    <Avatar src={data.user?.userAvatar ?? <UserOutlined />} />
+                  </div>
+                </Flex>
+              </Card>
+            </Link>
           </List.Item>
         )}
       />

@@ -94,7 +94,7 @@ const GeneratorAddPage: React.FC = () => {
       const res = await editGeneratorUsingPost(values);
       if (res.data) {
         message.success('更新成功');
-        history.push('/generator/detail/' + res.data);
+        history.push('/generator/detail/' + id);
       }
     } catch (error: any) {
       message.error('更新失败,' + error.message);
