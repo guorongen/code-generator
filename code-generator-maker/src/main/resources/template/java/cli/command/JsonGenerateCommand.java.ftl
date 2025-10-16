@@ -16,13 +16,13 @@ import java.util.concurrent.Callable;
 @Command(name = "json-generate", description="读取json文件生成代码", mixinStandardHelpOptions = true)
 @Data
 public class JsonGenerateCommand implements Callable<Integer> {
-    @Option(name = {"-f", "-file"}, arity = "0..1", description = "json文件路径", interactive = true, echo = true)
+    @Option(names = {"-f", "--file"}, arity = "0..1", description = "json文件路径", interactive = true, echo = true)
     private String filePath;
 
     public Integer call() throws Exception {
         String jsonStr = FileUtil.readUtf8String(filePath);
         DataModel dataModel = JSONUtil.toBean(jsonStr, DataModel.class);
-        MainGenerator.doGenerator(dataModel);
+        MainGenerator.doGenerate(dataModel);
         return 0;
     }
 }

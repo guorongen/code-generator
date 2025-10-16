@@ -1,7 +1,7 @@
 package com.gre.web.model.vo;
 
 import cn.hutool.json.JSONUtil;
-import com.gre.web.meta.Meta;
+import com.gre.maker.meta.Meta;
 import com.gre.web.model.entity.Generator;
 import lombok.Data;
 import org.springframework.beans.BeanUtils;

@@ -1,6 +1,6 @@
 package com.gre.web.model.dto.generator;
 
-import com.gre.web.meta.Meta;
+import com.gre.maker.meta.Meta;
 import lombok.Data;
 
 import java.io.Serializable;
